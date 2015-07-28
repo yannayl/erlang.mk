@@ -12,6 +12,11 @@ PLT_APPS ?=
 DIALYZER_DIRS ?= --src -r src
 DIALYZER_OPTS ?= -Werror_handling -Wrace_conditions \
 	-Wunmatched_returns # -Wunderspecs
+ifndef DIALYZER_FILTER_FILE
+ifneq ($(wildcard ./dialyzer.ignore-warnings),)
+DIALYZER_FILTER_FILE = ./dialyzer.ignore-warnings
+endif
+endif
 
 # Core targets.
 
@@ -27,6 +32,12 @@ help::
 
 # Plugin-specific targets.
 
+ifdef DIALYZER_FILTER_FILE
+DIALYZER_FILTER_CMD = | grep -v -f $(DIALYZER_FILTER_FILE)
+else
+DIALYZER_FILTER_CMD =
+endif
+
 $(DIALYZER_PLT): deps app
 	$(verbose) dialyzer --build_plt --apps erts kernel stdlib $(PLT_APPS) $(OTP_DEPS) $(ALL_DEPS_DIRS)
 
@@ -40,4 +51,4 @@ dialyze:
 else
 dialyze: $(DIALYZER_PLT)
 endif
-	$(verbose) dialyzer --no_native $(DIALYZER_DIRS) $(DIALYZER_OPTS)
+	$(verbose) dialyzer --no_native $(DIALYZER_DIRS) $(DIALYZER_OPTS) $(DIALYZER_FILTER_CMD)
